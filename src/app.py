@@ -20,10 +20,18 @@ async def async_predict():
         try:
             json_ = request.json
             print(json_)
-            query = pd.get_dummies(pd.DataFrame(json_))
+            # for multiple predictions (already a list)
+            # query = pd.get_dummies(pd.DataFrame(json_))
+
+            # for a single prediction
+            query = pd.get_dummies(pd.DataFrame([json_]))
             query = query.reindex(columns=model_columns, fill_value=0)
 
-            prediction = list(lr.predict(query))
+            # for multiple predictions at a time
+            # prediction = list(lr.predict(query))
+
+            # for a single prediction
+            prediction = lr.predict(query)[0]
 
             return jsonify({'prediction': str(prediction)})
 
@@ -37,4 +45,4 @@ async def async_predict():
 @app.route('/api/predict/test_model', methods=['POST'])
 async def predict():
     predictions = await async_predict()
-    return  predictions
+    return predictions
