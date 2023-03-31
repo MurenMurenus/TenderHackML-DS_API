@@ -9,7 +9,7 @@ app = Flask(__name__)
 
 @app.route('/api/predict/test_model', methods=['POST'])
 async def predict():
-    predictions = await controllers.async_predict()
+    predictions = await controllers.get_predictions()
     return predictions
 
 

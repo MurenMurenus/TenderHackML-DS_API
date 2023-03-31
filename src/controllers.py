@@ -14,7 +14,7 @@ model_columns = joblib.load("src/models/model_columns.pkl")  # Load columns that
 print('Model columns loaded')
 
 
-async def async_predict() -> flask.Response:
+async def get_predictions() -> flask.Response:
     if lr:
         try:
             json_ = request.json
@@ -32,16 +32,24 @@ async def async_predict() -> flask.Response:
 
 
 async def get_metrics() -> flask.Response:
-    if lr:
-        try:
-            json_ = request.json
-            print(json_)
-            data = pipeline.pipeline(pd.DataFrame([json_]))
-            statistics = 'Test statistics'
-            return jsonify({'metrics': str(statistics)})
+    try:
+        json_ = request.json
+        print(json_)
+        data = pipeline.pipeline(pd.DataFrame([json_]))
+        statistics = 'Test statistics'
+        return jsonify({'metrics': str(statistics)})
 
-        except:
-            return jsonify({'trace': traceback.format_exc()})
-    else:
-        print('Train the model first')
-        return jsonify({'trace': str('Train the model first')})
+    except:
+        return jsonify({'trace': traceback.format_exc()})
+
+
+async def get_efficiency() -> flask.Response:
+    try:
+        json_ = request.json
+        print(json_)
+        data = pipeline.pipeline(pd.DataFrame([json_]))
+        efficiency = 1
+        return jsonify({'efficiency': str(efficiency)})
+
+    except:
+        return jsonify({'trace': traceback.format_exc()})
