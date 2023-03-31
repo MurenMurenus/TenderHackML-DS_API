@@ -1,4 +1,3 @@
-# Import dependencies
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -12,14 +11,14 @@ include = ['Age', 'Sex', 'Embarked', 'Survived'] # Only four features
 df_ = df[include]
 
 # Data Preprocessing
-categoricals = []
+categories = []
 for col, col_type in df_.dtypes.iteritems():
      if col_type == 'O':
-          categoricals.append(col)
+          categories.append(col)
      else:
           df_[col].fillna(0, inplace=True)
 
-df_ohe = pd.get_dummies(df_, columns=categoricals, dummy_na=True)
+df_ohe = pd.get_dummies(df_, columns=categories, dummy_na=True)
 
 # Logistic Regression classifier
 dependent_variable = 'Survived'
@@ -30,7 +29,7 @@ lr.fit(x, y)
 
 # Save your model
 joblib.dump(lr, 'model.pkl')
-print("Model dumped!")
+print("Model dumped successfully!")
 
 # Load the model that you just saved
 lr = joblib.load('model.pkl')
@@ -38,4 +37,4 @@ lr = joblib.load('model.pkl')
 # Saving the data columns from training
 model_columns = list(x.columns)
 joblib.dump(model_columns, 'model_columns.pkl')
-print("Models columns dumped!")
+print("Models columns dumped successfully!")
