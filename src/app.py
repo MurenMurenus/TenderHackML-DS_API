@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request, jsonify
 
 from src import controllers
 from src import metrics
@@ -26,15 +26,15 @@ async def all_purchases():
     return purchases
 
 
-@app.route('/api/predict/test_model', methods=['POST'])
+@app.route('/api/predict/next', methods=['POST'])
 async def predict():
     predictions = await controllers.get_predictions()
     return predictions
 
 
-@app.route('/api/get_percent_won', methods=['POST'])
-async def percent_method():
-    percent = await metrics.get_percent_won()
+@app.route('/api/barChart', methods=['POST'])
+async def categorical_method():
+    percent = await metrics.get_contract_category()
     return percent
 
 

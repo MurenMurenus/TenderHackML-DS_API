@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 from flask import request, jsonify
 
@@ -5,7 +7,7 @@ from src import database
 
 
 async def get_contract_category():
-    my_id = request.json['id']
+    my_id = request.get_json(force=True)['id']
 
     all_data = await database.get_exact_id_data(my_id)
     purch = await database.get_exact_id_purchases(my_id)
@@ -17,15 +19,14 @@ async def get_contract_category():
         percent_ks = winned[winned['contract_category'] == 'КС'].shape[0] / len_winned
         # percent_need
         percent_need = winned[winned['contract_category'] == 'Потребность'].shape[0] / len_winned
-        
-
+        return {"percent_ks": percent_ks, "percent_need": percent_need}
     else:
         print('No data about this user')
     # no data about this user
 
 
 async def get_regional_stat():
-    my_id = request.json['id']
+    my_id = request.get_json(force=True)['id']
 
     all_data = await database.get_exact_id_data(my_id)
     if all_data.shape[0] > 0:
@@ -50,7 +51,7 @@ async def get_regional_stat():
 
 
 async def get_percent_won():
-    my_id = request.json['id']
+    my_id = request.get_json(force=True)['id']
 
     all_data = await database.get_exact_id_data(my_id)
     purch = await database.get_exact_id_purchases(my_id)
