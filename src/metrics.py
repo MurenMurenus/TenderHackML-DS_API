@@ -6,6 +6,12 @@ from flask import request, jsonify
 from src import database
 
 
+async def income():
+    contracts_full_data = await database.get_contracts_database()
+    id_income = contracts_full_data.groupby('id')['price_y'].sum().reset_index()
+    return id_income
+
+
 async def get_contract_category():
     my_id = request.get_json(force=True)['id']
 
@@ -50,6 +56,13 @@ async def get_regional_stat():
     else:
         print('No data about this user')
     # no data about this user
+
+
+async def get_top_region():
+    reg_stat = await get_regional_stat()
+    reg_vals = [i['value'] for i in reg_stat]
+    top = [reg['name'] for reg in reg_stat if reg['value'] == max(reg_vals)][0]
+    return top
 
 
 async def get_percent_won():

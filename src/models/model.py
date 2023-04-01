@@ -4,9 +4,9 @@ import sklearn
 from sklearn.linear_model import LinearRegression
 
 my_id='purch_743865'
-purch=joblib.load('./src/')
-part=pd.read_csv('/kaggle/input/tenderhack/data.csv')
-comp=pd.read_csv('/kaggle/input/tenderhack/companies.csv',sep=';')
+purch = joblib.load('./pkl/data_collection.pkl')
+part = joblib.load('./pkl/data_collection.pkl')
+comp = joblib.load('./pkl/companies_collection.pkl')
 #contracts=pd.read_csv('contracts.csv',sep=';')
 
 all_data=part[part['id']==my_id]
@@ -71,4 +71,4 @@ if all_data.shape[0]>0:
     # Train the model on the training data
     model.fit(train_X, train_y)
 
-    joblib.dump(model, 'model.pkl')
+    joblib.dump(model, 'pkl/model.pkl')

@@ -1,20 +1,36 @@
 import flask
 from flask import Flask, request, jsonify
+from pymongo import MongoClient
 
 from src import controllers
 from src import metrics
 
 from flask_cors import CORS, cross_origin
+
+from src.controllers import get_exact
+
 app = Flask(__name__)
 cors = CORS(app, resources={r'/api/*': {'origins': 'http://localhost:5173'}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 # API definition
 
 
-@app.route('/api/get_exact_id_data', methods=['POST'])
-async def exact_id_data():
-    data = await controllers.get_exact_data()
-    return data
+@app.route('/api/get_exact_id', methods=['POST'])
+async def exact_id():
+    return get_exact()
+
+
+@app.route('/api/income', methods=['POST'])
+async def id_income():
+    my_id = request.get_json(force=True)['id']
+    o_income = await metrics.income()
+    return {'Total income': o_income[my_id]}
+
+
+@app.route('/api/top_region', methods=['POST'])
+async def get_top_reg():
+    purchases = await metrics.get_top_region()
+    return {'Top region': purchases}
 
 
 @app.route('/api/get_exact_id_purchases', methods=['POST'])
@@ -23,9 +39,9 @@ async def exact_id_purchases():
     return purchases
 
 
-@app.route('/api/get_all_purchases', methods=['POST'])
-async def all_purchases():
-    purchases = await controllers.get_all_purchases()
+@app.route('/api/get_exact_id_data', methods=['POST'])
+async def exact_id_data():
+    purchases = await controllers.get_exact_data()
     return purchases
 
 
