@@ -22,8 +22,11 @@ async def exact_id():
 
 @app.route('/api/income', methods=['POST'])
 async def id_income():
-    my_id = request.get_json(force=True)['id']
-    o_income = await metrics.income()
+    json_ = request.get_json(force=True)
+    my_id = json_['id']
+    fr = json_['from']
+    to = json_['to']
+    o_income = await metrics.income(my_id, fr, to)
     return {'Total income': o_income[my_id]}
 
 

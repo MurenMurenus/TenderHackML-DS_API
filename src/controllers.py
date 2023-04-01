@@ -17,7 +17,7 @@ print('Model loaded')
 
 
 async def get_exact():
-    IP = "10.10.117.233"
+    IP = "192.168.1.50"
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
     return db_raw['data'].find_one({"_id": request.get_json(force=True)['id']})

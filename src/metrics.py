@@ -6,9 +6,9 @@ from flask import request, jsonify
 from src import database
 
 
-async def income():
-    contracts_full_data = await database.get_contracts_database()
-    id_income = contracts_full_data.groupby('id')['price_y'].sum().reset_index()
+async def income(my_id, fr, to):
+    contracts_full_data = await database.get_exact_id_contracts(my_id)
+    id_income = contracts_full_data[contracts_full_data['contract_conclusion_date']]
     return id_income
 
 
@@ -59,7 +59,7 @@ async def get_regional_stat():
 
 
 async def get_top_region():
-    reg_stat = await get_regional_stat()
+    contracts_full_data = await database.get_contracts_database()
     reg_vals = [i['value'] for i in reg_stat]
     top = [reg['name'] for reg in reg_stat if reg['value'] == max(reg_vals)][0]
     return top

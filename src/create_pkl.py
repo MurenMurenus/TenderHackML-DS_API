@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import joblib
 
 
-IP = "10.10.117.233"
+IP = "192.168.1.50"
 
 client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
 db_raw = client['VendorDb']
@@ -27,5 +27,5 @@ db_raw = client['VendorDb']
 data_collection = pd.DataFrame(db_raw['contracts'].find()).drop(axis=1, columns='_id')
 print(data_collection.columns)
 #data_collection = data_collection.drop(axis=1, columns='Unnamed: 0')
-joblib.dump(data_collection, 'models/pkl/contracts_collection.pkl')
+joblib.dump(data_collection, './pkl/contracts_collection.pkl')
 print('Contracts')
