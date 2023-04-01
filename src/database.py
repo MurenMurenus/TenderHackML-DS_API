@@ -1,8 +1,9 @@
 import joblib
 
 
-purchases_collection = joblib.load('./src/purchase_collection.pkl')
-data_collection = joblib.load('./src/data_collection.pkl')
+purchases_collection = joblib.load('./src/pkls/purchase_collection.pkl')
+data_collection = joblib.load('./src/pkls/data_collection.pkl')
+companies_collection = joblib.load('./src/pkls/companies_collection.pkl')
 
 
 async def get_data_database():
@@ -11,6 +12,10 @@ async def get_data_database():
 
 async def get_purchases_database():
     return purchases_collection
+
+
+async def get_companies_database():
+    return companies_collection
 
 
 async def get_exact_id_data(exact_id: str):

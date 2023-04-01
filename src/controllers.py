@@ -53,6 +53,7 @@ async def get_predictions():
             all_data = await database.get_exact_id_data(my_id)
             purch = await database.get_exact_id_purchases(my_id)
             part = await database.get_data_database()
+            comp = pd.read_csv('/kaggle/input/tenderhack/companies.csv', sep=';')
             winned = all_data[all_data['is_winner'] == 'Да']
             # percent_winned
             percent_winned = (winned.shape[0] / all_data.shape[0]) * 100

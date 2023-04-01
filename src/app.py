@@ -1,11 +1,14 @@
+import flask
 from flask import Flask, request, jsonify
 
 from src import controllers
 from src import metrics
 
-
-# API definition
+from flask_cors import CORS, cross_origin
 app = Flask(__name__)
+cors = CORS(app, resources={r'/api/*': {'origins': 'http://localhost:5173'}})
+app.config['CORS_HEADERS'] = 'Content-Type'
+# API definition
 
 
 @app.route('/api/get_exact_id_data', methods=['POST'])
@@ -41,4 +44,7 @@ async def categorical_method():
 @app.route('/api/pieChart', methods=['POST'])
 async def regional_method():
     regional = await metrics.get_regional_stat()
+    response = flask.jsonify({"data": regional})
+    # response.headers.add('Access-Control-Allow-Origin', '*')
+    print(response.headers)
     return regional

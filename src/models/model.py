@@ -4,7 +4,7 @@ import sklearn
 from sklearn.linear_model import LinearRegression
 
 my_id='purch_743865'
-purch=pd.read_csv('/kaggle/input/tenderhack/purchases.csv',sep=';')
+purch=joblib.load('./src/')
 part=pd.read_csv('/kaggle/input/tenderhack/data.csv')
 comp=pd.read_csv('/kaggle/input/tenderhack/companies.csv',sep=';')
 #contracts=pd.read_csv('contracts.csv',sep=';')

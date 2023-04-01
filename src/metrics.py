@@ -19,7 +19,9 @@ async def get_contract_category():
         percent_ks = winned[winned['contract_category'] == 'КС'].shape[0] / len_winned
         # percent_need
         percent_need = winned[winned['contract_category'] == 'Потребность'].shape[0] / len_winned
-        return {"percent_ks": percent_ks, "percent_need": percent_need}
+        return [
+                    {"name": "Категории контрактов", "КС": percent_ks, "Потребность": percent_need, "amt": 0}
+                ]
     else:
         print('No data about this user')
     # no data about this user
