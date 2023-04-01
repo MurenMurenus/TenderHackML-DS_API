@@ -32,7 +32,13 @@ async def predict():
     return predictions
 
 
-@app.route('/api/metrics', methods=['POST'])
-async def metrics_method():
-    o_metrics = await metrics.get_metrics()
-    return o_metrics
+@app.route('/api/get_percent_won', methods=['POST'])
+async def percent_method():
+    percent = await metrics.get_percent_won()
+    return percent
+
+
+@app.route('/api/pieChart', methods=['POST'])
+async def regional_method():
+    regional = await metrics.get_regional_stat()
+    return regional
