@@ -7,6 +7,12 @@ from src import controllers
 app = Flask(__name__)
 
 
+@app.route('/api/get_all_purchases', methods=['POST'])
+async def all_purchases():
+    purchases = await controllers.get_all_purchases()
+    return purchases
+
+
 @app.route('/api/predict/test_model', methods=['POST'])
 async def predict():
     predictions = await controllers.get_predictions()

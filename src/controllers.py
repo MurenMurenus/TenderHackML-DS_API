@@ -6,12 +6,21 @@ import pandas as pd
 import numpy as np
 
 from src.models import pipeline
+import src.database as mongodb
 
 
 lr = joblib.load("src/models/model.pkl")  # Load pkl of our model.
 print('Model loaded')
 model_columns = joblib.load("src/models/model_columns.pkl")  # Load columns that our model uses.
 print('Model columns loaded')
+
+mongodb.create_database()
+
+
+async def get_all_purchases():
+    result = await mongodb.get_all_database()
+    print(result)
+    return jsonify(result.to_json())
 
 
 async def get_predictions() -> flask.Response:
