@@ -1,6 +1,7 @@
 import flask
-from flask import request, jsonify
+from flask import request
 import joblib
+import json
 import traceback
 import pandas as pd
 import numpy as np
@@ -14,16 +15,28 @@ print('Model loaded')
 model_columns = joblib.load("src/models/model_columns.pkl")  # Load columns that our model uses.
 print('Model columns loaded')
 
-mongodb.create_database()
-
 
 async def get_all_purchases():
-    result = await mongodb.get_all_database()
-    print(result)
-    return jsonify(result.to_json())
+    result = await mongodb.get_data_database()
+    print(result.head())
+    out = result.head().to_json(orient='index')
+    print(out)
+    return out
 
 
-async def get_predictions() -> flask.Response:
+async def get_exact():
+    try:
+        json_id = request.json
+        print(json_id)
+        exact_info = await mongodb.get_exact_id_data(json_id[id])
+        out = exact_info.to_json(orient='index')
+        return out
+
+    except:
+        return {'trace': traceback.format_exc()}
+
+
+async def get_predictions():
     if lr:
         try:
             json_ = request.json
@@ -31,34 +44,10 @@ async def get_predictions() -> flask.Response:
             data = await pipeline.pipeline(pd.DataFrame([json_]))
             prediction = lr.predict(data)[0]
 
-            return jsonify({'prediction': str(prediction)})
+            return {'prediction': str(prediction)}
 
         except:
-            return jsonify({'trace': traceback.format_exc()})
+            return {'trace': traceback.format_exc()}
     else:
         print('Train the model first')
-        return jsonify({'trace': str('Train the model first')})
-
-
-async def get_metrics() -> flask.Response:
-    try:
-        json_ = request.json
-        print(json_)
-        data = pipeline.pipeline(pd.DataFrame([json_]))
-        statistics = 'Test statistics'
-        return jsonify({'metrics': str(statistics)})
-
-    except:
-        return jsonify({'trace': traceback.format_exc()})
-
-
-async def get_efficiency() -> flask.Response:
-    try:
-        json_ = request.json
-        print(json_)
-        data = pipeline.pipeline(pd.DataFrame([json_]))
-        efficiency = 1
-        return jsonify({'efficiency': str(efficiency)})
-
-    except:
-        return jsonify({'trace': traceback.format_exc()})
+        return {'trace': str('Train the model first')}
