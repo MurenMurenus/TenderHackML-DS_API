@@ -1,23 +1,21 @@
 import pandas as pd
 from pymongo import MongoClient
 
+IP = "192.168.1.50"
+
+client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
+db_raw = client['VendorDb']
+purchases_collection = pd.DataFrame(db_raw['purchases'].find()).drop(axis=1, columns='_id')
+print('Purchases')
+data_collection = pd.DataFrame(db_raw['data'].find()).drop(axis=1, columns='_id')
+print('Data')
 
 async def get_data_database():
-    client = MongoClient('mongodb://root:rootpassword@192.168.247.252:27017')
-    db_raw = client['VendorDb']
-    collection = db_raw['data']
-    db = pd.DataFrame(collection.find())
-    db = db.drop(axis=1, columns='_id')
-    return db
+    return data_collection
 
 
 async def get_purchases_database():
-    client = MongoClient('mongodb://root:rootpassword@192.168.247.252:27017')
-    db_raw = client['VendorDb']
-    collection = db_raw['purchases']
-    db = pd.DataFrame(collection.find())
-    db = db.drop(axis=1, columns='_id')
-    return db
+    return purchases_collection
 
 
 async def get_exact_id_data(exact_id: str):

@@ -8,9 +8,15 @@ from src import metrics
 app = Flask(__name__)
 
 
-@app.route('/api/get_exact_id', methods=['POST'])
-async def exact_id():
-    purchases = await controllers.get_exact()
+@app.route('/api/get_exact_id_data', methods=['POST'])
+async def exact_id_data():
+    data = await controllers.get_exact_data()
+    return data
+
+
+@app.route('/api/get_exact_id_purchases', methods=['POST'])
+async def exact_id_purchases():
+    purchases = await controllers.get_exact_purchases()
     return purchases
 
 

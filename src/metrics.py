@@ -8,7 +8,7 @@ async def get_metrics():
     my_id = request.json['id']
 
     all_data = await database.get_exact_id_data(my_id)
-    purch = await database.get_exact_id_data(my_id)
+    purch = await database.get_exact_id_purchases()
     part = await database.get_data_database()
     if all_data.shape[0] > 0:
         winned = all_data[all_data['is_winner'] == 'Да']

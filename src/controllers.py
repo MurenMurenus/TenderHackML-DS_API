@@ -18,17 +18,28 @@ print('Model columns loaded')
 
 async def get_all_purchases():
     result = await mongodb.get_data_database()
-    print(result.head())
-    out = result.head().to_json(orient='index')
+    out = result.to_json(orient='index')
     print(out)
     return out
 
 
-async def get_exact():
+async def get_exact_data():
     try:
         json_id = request.json
         print(json_id)
         exact_info = await mongodb.get_exact_id_data(json_id[id])
+        out = exact_info.to_json(orient='index')
+        return out
+
+    except:
+        return {'trace': traceback.format_exc()}
+
+
+async def get_exact_purchases():
+    try:
+        json_id = request.json
+        print(json_id)
+        exact_info = await mongodb.get_exact_id_purchases(json_id[id])
         out = exact_info.to_json(orient='index')
         return out
 
