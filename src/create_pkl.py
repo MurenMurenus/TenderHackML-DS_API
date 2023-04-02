@@ -3,7 +3,7 @@ from pymongo import MongoClient
 import joblib
 
 
-IP = "192.168.1.50"
+IP = "172.20.10.5"
 
 client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
 db_raw = client['VendorDb']

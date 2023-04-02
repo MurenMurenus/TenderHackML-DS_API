@@ -24,15 +24,15 @@ async def get_contracts_database():
 
 
 async def get_exact_id_data(exact_id: str):
-    result = data_collection[data_collection['id'] == exact_id]
+    result = data_collection[data_collection['customer_inn'] == int(exact_id)]
     return result
 
 
 async def get_exact_id_purchases(exact_id: str):
-    result = purchases_collection[purchases_collection['id'] == exact_id]
+    result = purchases_collection[purchases_collection['customer_inn'] == int(exact_id)]
     return result
 
 
 async def get_exact_id_contracts(exact_id: str):
-    result = contracts_collection[contracts_collection['id'] == exact_id]
+    result = contracts_collection[contracts_collection['customerid": "purch_6123338"_inn'] == int(exact_id)]
     return result
