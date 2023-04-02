@@ -1,6 +1,7 @@
 # ML/DS API
 
-API to get data from mongo-database and predictions from model with HTTP requests.
-API is asynchronical, so it's possible to get requests from different client at the same time.
+Через данный API получается доступ к mongodb, а также реализуется обработка и выдача данных на бэк веб-сервиса.
 
-The model is dumped to .pkl file to be loaded in Flask API.
+Для отображения графиков/таблиц/любой другой информации реализованы методы преобразования данных в требуемые json'ы.
+Если необходимо составлять предикты без повторного обучения модели, есть возможность выгрузить модель в .pkl файл и использовать в любой момент.
+(pkl файлы здесь используются для оптимизации времени)

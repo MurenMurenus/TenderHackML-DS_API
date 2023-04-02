@@ -18,11 +18,11 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route('/api/sth', methods=['POST'])
 async def sth():
-    IP = "172.20.10.5"
+    IP = "192.168.181.252"
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
     data = db_raw['data'].find_one({"customer_inn": request.get_json(force=True)['customer_inn']})
-    data['_inn'] = 0
+    data['_id'] = 0
 
     return data
 
@@ -82,8 +82,8 @@ async def exact_id_data():
 
 @app.route('/api/curve', methods=['POST'])
 async def curve():
-    my_inn = request.get_json(force=True)['customer_inn']
-    print(1)
+    json_ = request.get_json(force=True)
+    my_inn = json_['customer_inn']
     predictions = await controllers.get_curve(my_inn)
 
     return predictions

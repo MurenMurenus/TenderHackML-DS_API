@@ -1,7 +1,7 @@
 import pandas as pd
 from pymongo import MongoClient
 
-IP = '172.20.10.5'
+IP = '192.168.181.252'
 client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
 db_raw = client['VendorDb']
 # collection = db_raw['data']

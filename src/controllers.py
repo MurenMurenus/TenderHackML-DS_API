@@ -12,7 +12,7 @@ from pymongo import MongoClient
 
 
 async def get_by_timestamp(from_: str, to: str, inn_: str) -> list[[dict]]:
-    IP = '172.20.10.5'
+    IP = '192.168.222.252'
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
     data = db_raw['contracts'].find({'customer_inn': int(inn_)})  # request.get_json(force=True)['id']})
@@ -38,7 +38,7 @@ async def get_by_timestamp(from_: str, to: str, inn_: str) -> list[[dict]]:
 
 
 async def get_exact():
-    IP = "192.168.1.50"
+    IP = "192.168.222.252"
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
 
@@ -47,7 +47,7 @@ async def get_exact():
 
 async def get_all_purchases():
     result = await database.get_data_database()
-    out = result.to_json(orient='index')
+    out = result.to_json(orient='index', force_ascii=False)
 
     return out
 
@@ -56,7 +56,7 @@ async def get_exact_data():
     try:
         json_id = request.get_json(force=True)
         exact_info = await database.get_exact_id_data(json_id['customer_inn'])
-        out = exact_info.to_json(orient='index')
+        out = exact_info.to_json(orient='index', force_ascii=False)
 
         return out
 
@@ -69,7 +69,7 @@ async def get_exact_purchases():
         json_id = request.get_json(force=True)
         print(json_id)
         exact_info = await database.get_exact_id_purchases(json_id['customer_inn'])
-        out = exact_info.to_json(orient='index')
+        out = exact_info.to_json(orient='index', force_ascii=False)
 
         return out
 
@@ -82,7 +82,7 @@ async def get_exact_companies():
         json_id = request.get_json(force=True)
         print(json_id)
         exact_info = await database.get_exact_id_purchases(json_id['customer_inn'])
-        out = exact_info.to_json(orient='index')
+        out = exact_info.to_json(orient='index', force_ascii=False)
 
         return out
 
@@ -120,8 +120,8 @@ async def get_curve(my_inn):
     # assuming selected_rows is your DataFrame containing the selected rows
 
     # if you want to sort in descending order, use the argument ascending=False
-    # sorted_rows = selected_rows.sort_values(by='publish_date', ascending=False)
-    sorted_rows_id = selected_rows_id[['price_y', 'contract_conclusion_date']]
+    sorted_rows = selected_rows_id.sort_values(by='contract_conclusion_date', ascending=True)
+    sorted_rows_id = sorted_rows[['price_y', 'contract_conclusion_date']]
     out = [[], []]
     sorted_rows_id = sorted_rows_id.to_dict()
     print(sorted_rows_id)
@@ -139,6 +139,7 @@ async def get_curve(my_inn):
     # convert 'publish_date' to datetime
     df_filtered['contract_conclusion_date'] = pd.to_datetime(df_filtered['contract_conclusion_date'])
     mean_prices = df_filtered[['contract_conclusion_date', 'price_y']]
+    mean_prices = mean_prices.sort_values(by='contract_conclusion_date', ascending=True)
     mean_prices = mean_prices.to_dict()
     print(mean_prices)
     for k in mean_prices['price_y'].keys():

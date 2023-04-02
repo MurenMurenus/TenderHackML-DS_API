@@ -70,16 +70,31 @@ async def get_whole_region_stats(my_inn):
 
     lots = number_lot_names[number_lot_names['delivery_region']==top_reg[0]]
     lots = (lots[['lot_name', 'count']].sort_values(by='count', ascending=False)).head(5)
+    out1 = []
+    most_frequent = most_frequent[most_frequent['delivery_region'] == top_reg[0]]
+    for k in most_frequent['lot_name'].keys():
+        out1.append({"Lot": str(most_frequent['lot_name'][k]), "Count": str(most_frequent['count'][k])})
+
+    out_companies = number_of_companies[number_of_companies['delivery_region']==top_reg[0]]
+    print(out_companies)
+    out2 = []
+    for k in out_companies['delivery_region'].keys():
+        out2.append({out_companies['delivery_region'][k]: str(out_companies['id'][k])})
+
+    out3 = []
+    print(lots)
+    for k in lots['lot_name'].keys():
+        out3.append({"category": lots['lot_name'][k], "value": str(lots['count'][k])})
+
     # print the result
-    return {"most frequent category": most_frequent.head(3).to_json(force_ascii=False),
-            "number_of_companies_on_category": number_of_companies[number_of_companies['delivery_region']==top_reg[0]].to_json(force_ascii=False),
-            "lots_count_in region": lots.to_json(force_ascii=False)}
+    return {"most frequent category": out1,
+            "number_of_companies_on_region": out2,
+            "lots_count_in region": out3}
 
 
 async def get_top_region(from_, to, inn_):
     contracts_full_data = pd.DataFrame((await controllers.get_by_timestamp(from_, to, inn_))[0])
-    print(contracts_full_data.columns)
-    print('groupby')
+    print(contracts_full_data)
     vals = contracts_full_data.groupby('delivery_region')['price_y'].sum().reset_index()
 
     return vals
