@@ -18,11 +18,11 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route('/api/sth', methods=['POST'])
 async def sth():
-    IP = "192.168.1.50"
+    IP = "172.20.10.5"
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
-    data = db_raw['data'].find_one({"id": request.get_json(force=True)['id']})
-    data['_id'] = 0
+    data = db_raw['data'].find_one({"customer_inn": request.get_json(force=True)['customer_inn']})
+    data['_inn'] = 0
 
     return data
 
@@ -35,18 +35,18 @@ async def exact_id():
 @app.route('/api/income', methods=['POST'])
 async def id_income():
     json_ = request.get_json(force=True)
-    my_id = json_['id']
+    my_inn = json_['customer_inn']
     fr = json_['from']
     to = json_['to']
-    o_income = await metrics.income(my_id, fr, to)
+    o_income = await metrics.income(my_inn, fr, to)
 
     return {'Total income now': o_income[0], 'Total income prev': o_income[1]}
 
 
 @app.route('/api/region_statistics', methods=['POST'])
 async def get_stat_region():
-    my_id = request.get_json(force=True)['id']
-    out = await metrics.get_whole_region_stats(my_id)
+    my_inn = request.get_json(force=True)['customer_inn']
+    out = await metrics.get_whole_region_stats(my_inn)
 
     return out
 
@@ -54,15 +54,14 @@ async def get_stat_region():
 @app.route('/api/statistics', methods=['POST'])
 async def get_stat_income():
     json_ = request.get_json(force=True)
-    my_id = json_['id']
+    my_inn = json_['customer_inn']
     fr = json_['from']
     to = json_['to']
-    o_income = await metrics.income(my_id, fr, to)
-    regions = (await metrics.get_top_region(fr, to, my_id)).sort_values(by='price_y')
+    o_income = await metrics.income(my_inn, fr, to)
+    regions = (await metrics.get_top_region(fr, to, my_inn)).sort_values(by='price_y')
     res = []
     for k in regions['delivery_region'].keys():
-        res.append({regions['delivery_region'][k]: regions['price_y'][k]})
-    print(res)
+        res.append({'delivery_region': regions['delivery_region'][k], 'price_y': regions['price_y'][k]})
 
     return {'Total income now': o_income[0], 'Total income prev': o_income[1], 'Regions': res}
 
@@ -83,8 +82,9 @@ async def exact_id_data():
 
 @app.route('/api/curve', methods=['POST'])
 async def curve():
-    my_id = request.get_json(force=True)['id']
-    predictions = await controllers.get_curve(my_id)
+    my_inn = request.get_json(force=True)['customer_inn']
+    print(1)
+    predictions = await controllers.get_curve(my_inn)
 
     return predictions
 
