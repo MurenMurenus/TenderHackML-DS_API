@@ -4,23 +4,18 @@ import joblib
 import json
 import traceback
 import pandas as pd
-import numpy as np
-from datetime import datetime, timedelta
-import dateutil.relativedelta
+from datetime import datetime
 
-from src.models import pipeline
 from src import database
+from src import metrics
 from pymongo import MongoClient
 
 
-# lr = joblib.load("./src/models/pkl/model.pkl")  # Load pkl of our model.
-# print('Model loaded')
-
-async def get_by_timestamp(from_: str, to: str, id_: str) -> list[[dict]]:
-    IP = '172.20.10.5'
+async def get_by_timestamp(from_: str, to: str, inn_: str) -> list[[dict]]:
+    IP = "10.10.115.170"
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
-    data = db_raw['contracts'].find({"id": id_})  # request.get_json(force=True)['id']})
+    data = db_raw['contracts'].find({'customer_inn': int(inn_)})  # request.get_json(force=True)['id']})
 
     date_from = datetime.strptime(from_,"%Y-%m-%d")
     date_to = datetime.strptime(to, "%Y-%m-%d")
@@ -38,29 +33,31 @@ async def get_by_timestamp(from_: str, to: str, id_: str) -> list[[dict]]:
         each['_id'] = 0
     for each in out[1]:
         each['_id'] = 0
+
     return out
 
 
 async def get_exact():
-    IP = "192.168.1.50"
+    IP = "10.10.115.170"
     client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
     db_raw = client['VendorDb']
-    return db_raw['data'].find_one({"_id": request.get_json(force=True)['id']})
+
+    return db_raw['data'].find_one({"_inn": request.get_json(force=True)['customer_inn']})
 
 
 async def get_all_purchases():
     result = await database.get_data_database()
-    out = result.to_json(orient='index')
-    print(out)
+    out = result.to_json(orient='index', force_ascii=False)
+
     return out
 
 
 async def get_exact_data():
     try:
         json_id = request.get_json(force=True)
-        print(json_id['id'])
-        exact_info = await database.get_exact_id_data(json_id['id'])
-        out = exact_info.to_json(orient='index')
+        exact_info = await database.get_exact_id_data(json_id['customer_inn'])
+        out = exact_info.to_json(orient='index', force_ascii=False)
+
         return out
 
     except:
@@ -71,8 +68,9 @@ async def get_exact_purchases():
     try:
         json_id = request.get_json(force=True)
         print(json_id)
-        exact_info = await database.get_exact_id_purchases(json_id['id'])
-        out = exact_info.to_json(orient='index')
+        exact_info = await database.get_exact_id_purchases(json_id['customer_inn'])
+        out = exact_info.to_json(orient='index', force_ascii=False)
+
         return out
 
     except:
@@ -83,158 +81,72 @@ async def get_exact_companies():
     try:
         json_id = request.get_json(force=True)
         print(json_id)
-        exact_info = await database.get_exact_id_purchases(json_id['id'])
-        out = exact_info.to_json(orient='index')
+        exact_info = await database.get_exact_id_purchases(json_id['customer_inn'])
+        out = exact_info.to_json(orient='index', force_ascii=False)
+
         return out
 
     except:
         return {'trace': traceback.format_exc()}
 
 
-'''
-async def get_predictions():
-    if lr:
-        try:
-            my_id = request.get_json(force=True)['id']
-            print(my_id)
-            all_data = await database.get_exact_id_data(my_id)
-            purch = await database.get_exact_id_purchases(my_id)
-            part = await database.get_data_database()
-            comp = await database.get_companies_database()
+async def get_curve(my_inn):
+    print(2)
+    contracts = joblib.load('./src/models/pkl/contracts_collection.pkl')
+    all_data = await database.get_data_database()
+    data_winned_all = \
+        all_data[all_data['is_winner'] == 'Да'].drop('Unnamed: 0', axis=1).\
+            drop('delivery_region', axis=1).drop('lot_name', axis=1).\
+            drop('customer_inn', axis=1)
 
-            winned = all_data[all_data['is_winner'] == 'Да']
-            print(winned)
-            # percent_winned
-            percent_winned = (winned.shape[0] / all_data.shape[0]) * 100
+    contracts_full_data = data_winned_all.merge(contracts, on='id')
+    contracts_full_data = contracts_full_data.loc[contracts_full_data['price_x'] >= contracts_full_data['price_y']]
 
-            companies = comp[comp["status"] == 'Активная']
-            purchases = part.merge(companies, on='supplier_inn')
-            # Convert publish_date to datetime
-            purchases['publish_date'] = pd.to_datetime(purchases['publish_date'])
+    top_reg = (await metrics.get_top_region("1970-01-01", "2100-01-01", my_inn)).head(1)['delivery_region']
+    print(top_reg)
+    my_region = top_reg[0]
+    my_lots = contracts_full_data[contracts_full_data['customer_inn'] == int(my_inn)]
+    my_lots = my_lots.groupby('lot_name')['price_y'].sum().reset_index()
+    my_lot_name = list((my_lots[['lot_name', 'price_y']].sort_values(by='price_y', ascending=False)).head(1)['lot_name'].values)[0]
+    print(my_lot_name)
 
-            # Extract year-month from publish_date
-            purchases['year_month'] = purchases['publish_date'].dt.strftime('%Y-%m')
+    # boolean indexing to extract rows that match your criteria
+    mask = (contracts_full_data['customer_inn'] == int(my_inn)) & \
+           (contracts_full_data['delivery_region'] == my_region) & \
+           (contracts_full_data['lot_name'] == my_lot_name)
 
-            # Merge purchases and participants
-            merged_data = purchases
-            # Calculate winning percentage by year-month
-            winners_by_year_month = merged_data[merged_data['is_winner'] == 'Да'].groupby('year_month').size()
-            total_by_year_month = merged_data.groupby('year_month').size()
-            # everyone stat
-            percent_won_by_year_month = (winners_by_year_month / total_by_year_month) * 100
-            print(percent_won_by_year_month)
+    selected_rows_id = contracts_full_data[mask]
+    print(selected_rows_id.head())
+    # assuming selected_rows is your DataFrame containing the selected rows
 
-            df = percent_won_by_year_month.reset_index(name='winning_percentage')
-            df.columns = ['year_month', 'winning_percentage']
-            id_data = merged_data[merged_data['id'] == my_id]
+    # if you want to sort in descending order, use the argument ascending=False
+    sorted_rows = selected_rows_id.sort_values(by='contract_conclusion_date', ascending=True)
+    sorted_rows['contract_conclusion_date'] = pd.to_datetime(sorted_rows['contract_conclusion_date'])
+    sorted_rows_id = sorted_rows.groupby(sorted_rows['contract_conclusion_date'].dt.to_period('M'))['price_y'].mean()
+    out = [[], []]
+    sorted_rows_id = sorted_rows_id.to_dict()
+    print(sorted_rows_id)
 
-            # Calculate winning percentage by year-month for my_id
-            winners_by_year_month = id_data[id_data['is_winner'] == 'Да'].groupby('year_month').size()
+    for k in sorted_rows_id.keys():
+        out[0].append({'price': sorted_rows_id[k],
+                       'contract_conclusion_date': str(k)[:7],
+                       'schedule': 'Стоимость контракта поставщика'})
+    print(out[0])
+    # sorted_rows_id.to_csv('id_mean.csv', index=False)
 
-            total_by_year_month = id_data.groupby('year_month').size()
-            print(total_by_year_month)
-            percent_won_by_year_month = (winners_by_year_month.shape[0] / total_by_year_month) * 100
+    # filter by region and lot name
+    df_filtered = contracts_full_data[
+        (contracts_full_data['delivery_region'] == my_region) & (contracts_full_data['lot_name'] == my_lot_name)]
 
-            # Create DataFrame with winning percentages for my_id
-            result_df = pd.DataFrame(
-                {'year_month': percent_won_by_year_month.index, 'winning_percentage': percent_won_by_year_month.values})
-            df_everyone = df
-            # Convert year_month column to datetime format if necessary
-            df_everyone['year_month'] = pd.to_datetime(df_everyone['year_month'])
-            test = df_everyone[-1:]['year_month'].values.reshape(-1, 1)
-            test = pd.to_numeric(test.flatten()).reshape(-1, 1)
-            predicted_percentage = lr.predict(test)
-            new_row = pd.DataFrame({"year_month": [df_everyone['year_month'].max() + pd.DateOffset(months=1)],
-                                    "winning_percentage": [predicted_percentage[0]]})
-            all_predict = df.append(new_row, ignore_index=True)
+    # convert 'publish_date' to datetime
+    df_filtered['contract_conclusion_date'] = pd.to_datetime(df_filtered['contract_conclusion_date'])
+    mean_prices = df_filtered.groupby(df_filtered['contract_conclusion_date'].dt.to_period('M'))['price_y'].mean()
+    mean_prices = mean_prices.to_dict()
+    for k in mean_prices.keys():
+        out[1].append({'price': mean_prices[k],
+                       'contract_conclusion_date': str(k)[:7],
+                      'schedule': 'Средняя стоимость контракта по рынку'})
+    print(out[1])
+    # mean_prices.to_csv('all_mean.csv', index=False)[:10]
 
-            df_exact = result_df
-            df_exact['year_month'] = pd.to_datetime(df_exact['year_month'])
-            last_month = df_exact['year_month'].max()
-            next_month = last_month + pd.DateOffset(months=1)
-            new_row = pd.DataFrame({'year_month': [next_month],
-                                    'winning_percentage': [0]})
-            df_exact = df_exact.append(new_row, ignore_index=True)
-
-            df_exact['year_month'] = pd.to_datetime(df_exact['year_month'])
-
-            # Create training data by selecting all rows except the last one
-            train_X = df_exact[:-1]['year_month'].values.reshape(-1, 1)
-            train_y = df_exact[:-1]['winning_percentage']
-
-            # Create test data by selecting the last row
-            test_X = df_exact[-1:]['year_month'].values.reshape(-1, 1)
-            test_X = pd.to_numeric(test_X.flatten()).reshape(-1, 1)
-            # Initialize a linear regression model
-            model = LinearRegression()
-
-            # Train the model on the training data
-            model.fit(train_X, train_y)
-
-            # Predict the percentage for the next month
-            predicted_percentage = model.predict(test_X)
-
-            new_row = pd.DataFrame({"year_month": [next_month],
-                                    "winning_percentage": [predicted_percentage[0]]})
-
-            while next_month != df_everyone['year_month'].max():
-                last_month = df_exact['year_month'].max()
-
-                # Get the next month
-                next_month = last_month + pd.DateOffset(months=1)
-                new_row = pd.DataFrame({'year_month': [next_month],
-                                        'winning_percentage': [0]})
-
-                # Append the new row to the existing DataFrame
-                df_exact = df_exact.append(new_row, ignore_index=True)
-
-            # Print the output data frame
-
-            output_df_exact = result_df.append(new_row, ignore_index=True)
-            print(output_df_exact)
-
-            contracts[contracts['id']==my_id]
-            final_prices=contracts[contracts['id']==my_id]['price']
-            start_prices=all_data[all_data['is_winner']=='Да']['price']
-            diff=[]
-            for i in range(len(start_prices.values)):
-                d=final_prices.values[i]-start_prices.values[i]
-                per=(d/start_prices.values[i])*100
-                diff.append(per)
-
-            f_everyone = df
-            # Convert year_month column to datetime format if necessary
-            df_everyone['year_month'] = pd.to_datetime(df_everyone['year_month'])
-
-            # Create training data by selecting all rows except the last one
-            train_X = df_everyone[:-1]['year_month'].values.reshape(-1, 1)
-            train_y = df_everyone[:-1]['winning_percentage']
-
-            # Create test data by selecting the last row
-            test_X = df_everyone[-1:]['year_month'].values.reshape(-1, 1)
-            test_X = pd.to_numeric(test_X.flatten()).reshape(-1, 1)
-            # Initialize a linear regression model
-            model = LinearRegression()
-
-            # Train the model on the training data
-            model.fit(train_X, train_y)
-
-            # Predict the percentage for the next month
-            predicted_percentage = model.predict(test_X)
-
-            new_row = pd.DataFrame({"year_month": [df_everyone['year_month'].max() + pd.DateOffset(months=1)],
-                                    "winning_percentage": [predicted_percentage[0]]})
-
-            # Print the output data frame
-
-            output_df = df.append(new_row, ignore_index=True)
-            print(output_df)
-
-            return output_df.to_json(orient='index')
-
-        except:
-            return {'trace': traceback.format_exc()}
-    else:
-        print('Train the model first')
-        return {'trace': str('Train the model first')}
-'''
+    return out
