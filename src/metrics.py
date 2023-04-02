@@ -1,15 +1,13 @@
-import json
-from datetime import datetime, timedelta
 import pandas as pd
-from flask import request, jsonify
+from flask import request
 
 from src import database
 from src import controllers
 
 
-async def income(my_id, fr, to):
-    contracts_full_data = await controllers.get_by_timestamp(fr, to, my_id)
-    print(contracts_full_data)
+async def income(my_inn, fr, to):
+    contracts_full_data = await controllers.get_by_timestamp(fr, to, my_inn)
+
     out_now = 0
     for i in contracts_full_data[0]:
         out_now += i['price_y']
@@ -20,11 +18,10 @@ async def income(my_id, fr, to):
 
 
 async def get_contract_category():
-    my_id = request.get_json(force=True)['id']
+    my_inn = request.get_json(force=True)['customer_inn']
 
-    all_data = await database.get_exact_id_data(my_id)
-    purch = await database.get_exact_id_purchases(my_id)
-    part = await database.get_data_database()
+    all_data = await database.get_exact_id_data(my_inn)
+
     if all_data.shape[0] > 0:
         winned = all_data[all_data['is_winner'] == 'Да']
         len_winned = winned.shape[0]
@@ -32,8 +29,9 @@ async def get_contract_category():
         percent_ks = winned[winned['contract_category'] == 'КС'].shape[0] / len_winned
         # percent_need
         percent_need = winned[winned['contract_category'] == 'Потребность'].shape[0] / len_winned
+
         return [
-                    {"name": "Категории контрактов", "КС": percent_ks, "Потребность": percent_need, "amt": 0}
+                    {"name": "Категории контрактов", "Котировочная сессия": percent_ks * 100, "Потребность": percent_need * 100, "amt": 0}
                 ]
     else:
         print('No data about this user')
@@ -41,9 +39,9 @@ async def get_contract_category():
 
 
 async def get_regional_stat():
-    my_id = request.get_json(force=True)['id']
+    my_inn = request.get_json(force=True)['customer_inn']
 
-    all_data = await database.get_exact_id_data(my_id)
+    all_data = await database.get_exact_id_data(my_inn)
     if all_data.shape[0] > 0:
         winned = all_data[all_data['is_winner'] == 'Да']
 
@@ -56,44 +54,59 @@ async def get_regional_stat():
             cur_reg = winned[winned['delivery_region'] == i].shape[0]
             percent_region[i] = (cur_reg / len_winned) * 100
             out.append({'name': i, 'value': percent_region[i]})
-        # percent_region
 
-        print(out)
         return out
     else:
         print('No data about this user')
     # no data about this user
 
 
-async def get_whole_region_stats(my_id):
-    most_frequent = pd.read_csv('./src/data/most_frequent_lot_name_in_region.csv')
-    number_of_companies = pd.read_csv('./src/data/number_of_companies_all_regions.csv')
-    number_lot_names = pd.read_csv('./src/data/number_region_lot_name.csv')
+async def get_whole_region_stats(my_inn):
+    most_frequent = pd.read_csv('src/data/most_frequent_lot_name_in_region.csv')
+    number_of_companies = pd.read_csv('src/data/number_of_companies_all_regions.csv')
+    number_lot_names = pd.read_csv('src/data/number_region_lot_name.csv')
 
-    top_reg = (await get_top_region("1970-01-01", "2100-01-01", my_id)).head(1)['delivery_region']
+    top_reg = (await get_top_region("1970-01-01", "2100-01-01", my_inn)).head(1)['delivery_region']
 
-    lots = number_lot_names[number_lot_names['delivery_region']==top_reg[0]]
+    lots = number_lot_names[number_lot_names['delivery_region'] == top_reg[0]]
     lots = (lots[['lot_name', 'count']].sort_values(by='count', ascending=False)).head(5)
+    out1 = []
+    most_frequent = most_frequent[most_frequent['delivery_region'] == top_reg[0]]
+    for k in most_frequent['lot_name'].keys():
+        out1.append({"Lot": str(most_frequent['lot_name'][k]), "Count": str(most_frequent['count'][k])})
+
+    out_companies = number_of_companies[number_of_companies['delivery_region'] == top_reg[0]]
+    print(out_companies)
+    out2 = []
+    for k in out_companies['delivery_region'].keys():
+        out2.append({'region': out_companies['delivery_region'][k],
+                     'companies': str(out_companies['id'][k])})
+
+    out3 = []
     print(lots)
+    for k in lots['lot_name'].keys():
+        out3.append({"category": lots['lot_name'][k], "value": str(lots['count'][k])})
+
     # print the result
-    return {"most frequent category": most_frequent.to_json(),
-            "number_of_companies_on_category": number_of_companies[number_of_companies['delivery_region']==top_reg[0]].to_json(),
-            "lots_count_in region": lots.to_json()}
+    return {"most_frequent_category": out1,
+            "number_of_companies_on_region": out2,
+            "lots_count_in_region": out3}
 
 
-async def get_top_region(from_, to, id_):
-    contracts_full_data = pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))[0])
-    print( pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))))
+async def get_top_region(from_, to, inn_):
+    contracts_full_data = pd.DataFrame((await controllers.get_by_timestamp(from_, to, inn_))[0])
+    print(contracts_full_data.columns)
+    print('groupby')
     vals = contracts_full_data.groupby('delivery_region')['price_y'].sum().reset_index()
-    print(vals)
+
     return vals
 
 
 async def get_percent_won():
-    my_id = request.get_json(force=True)['id']
+    my_inn = request.get_json(force=True)['customer_inn']
 
-    all_data = await database.get_exact_id_data(my_id)
-    purch = await database.get_exact_id_purchases(my_id)
+    all_data = await database.get_exact_id_data(my_inn)
+    purch = await database.get_exact_id_purchases(my_inn)
     part = await database.get_data_database()
     if all_data.shape[0] > 0:
         winned = all_data[all_data['is_winner'] == 'Да']
@@ -132,7 +145,7 @@ async def get_percent_won():
         # everyone stat
         percent_won_by_year_month = (winners_by_year_month / total_by_year_month) * 100
 
-        id_data = merged_data[merged_data['id'] == my_id]
+        id_data = merged_data[merged_data['customer_inn'] == int(my_inn)]
 
         # Calculate winning percentage by year-month for my_id
         winners_by_year_month = id_data[id_data['is_winner'] == 'Да'].groupby('year_month').size()
@@ -142,8 +155,8 @@ async def get_percent_won():
         # Create DataFrame with winning percentages for my_id
         result_df = pd.DataFrame(
             {'year_month': percent_won_by_year_month.index, 'winning_percentage': percent_won_by_year_month.values})
-        print(result_df.to_json())
-        return result_df.to_json()
+
+        return result_df.to_json(force_ascii=False)
     else:
         print('No data about this user')
     # no data about this user

@@ -1,6 +1,7 @@
 import flask
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from pymongo import MongoClient
+import json
 
 from src import controllers
 from src import metrics
@@ -17,11 +18,12 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route('/api/sth', methods=['POST'])
 async def sth():
-    IP = "192.168.1.50"
+    IP = "172.20.10.5"
     client = MongoClient(f'mongodb://root:rootpassword@{"localhost"}:27017')
     db_raw = client['VendorDb']
-    data = db_raw['data'].find_one({"id": request.get_json(force=True)['id']})
-    data['_id'] = 0
+    data = db_raw['data'].find_one({"customer_inn": request.get_json(force=True)['customer_inn']})
+    # data['_id'] = 0
+    print(data)
     return data
 
 
@@ -33,52 +35,59 @@ async def exact_id():
 @app.route('/api/income', methods=['POST'])
 async def id_income():
     json_ = request.get_json(force=True)
-    my_id = json_['id']
+    my_inn = json_['customer_inn']
     fr = json_['from']
     to = json_['to']
-    o_income = await metrics.income(my_id, fr, to)
+    o_income = await metrics.income(my_inn, fr, to)
+
     return {'Total income now': o_income[0], 'Total income prev': o_income[1]}
 
 
 @app.route('/api/region_statistics', methods=['POST'])
 async def get_stat_region():
-    my_id = request.get_json(force=True)['id']
-    out = await metrics.get_whole_region_stats(my_id)
+    my_inn = request.get_json(force=True)['customer_inn']
+    out = await metrics.get_whole_region_stats(my_inn)
     return out
 
 
 @app.route('/api/statistics', methods=['POST'])
 async def get_stat_income():
     json_ = request.get_json(force=True)
-    my_id = json_['id']
+    my_inn = json_['customer_inn']
     fr = json_['from']
     to = json_['to']
-    o_income = await metrics.income(my_id, fr, to)
-    regions = (await metrics.get_top_region(fr, to, my_id)).sort_values(by='price_y')
-    return {'Total income now': o_income[0], 'Total income prev': o_income[1], 'Regions': regions.to_json()}
+    o_income = await metrics.income(my_inn, fr, to)
+    regions = (await metrics.get_top_region(fr, to, my_inn)).sort_values(by='price_y')
+    res = []
+    for k in regions['delivery_region'].keys():
+        res.append({'delivery_region': regions['delivery_region'][k], 'price_y': regions['price_y'][k]})
 
-
-@app.route('/api/top_region', methods=['POST'])
-async def get_top_reg():
-    top = await metrics.get_top_region()
-    return {'Top region': top}
+    return {'totalIncomeNow': o_income[0], 'totalIncomePast': o_income[1], 'regions': res}
 
 
 @app.route('/api/get_exact_id_purchases', methods=['POST'])
 async def exact_id_purchases():
     purchases = await controllers.get_exact_purchases()
+
     return purchases
 
 
 @app.route('/api/get_exact_id_data', methods=['POST'])
 async def exact_id_data():
     purchases = await controllers.get_exact_data()
+
     return purchases
 
 
-@app.route('/api/predict/next', methods=['POST'])
-async def predict():
-    predictions = await controllers.get_predictions()
+@app.route('/api/curve', methods=['POST'])
+async def curve():
+    json_ = request.get_json(force=True)
+    my_inn = json_['customer_inn']
+    # fr = json_['from']
+    # to = json_['to']
+    predictions = await controllers.get_curve(my_inn)
+    print(1)
+
     return predictions
 
 
@@ -93,5 +102,5 @@ async def regional_method():
     regional = await metrics.get_regional_stat()
     response = flask.jsonify({"data": regional})
     # response.headers.add('Access-Control-Allow-Origin', '*')
-    print(response.headers)
+
     return regional
