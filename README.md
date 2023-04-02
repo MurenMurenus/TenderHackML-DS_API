@@ -1,6 +1,4 @@
-# ML_API
+# ML/DS_API
 
-API from a machine learning model in Python to get predictions with HTTP requests.
-API is asynchronical, so it's possible to get requests from different client at the same time.
-
-The model is dumped to .pkl file to be loaded in Flask API.
+API для общения с mongo-database, высчитывания метрик и формирований jsonов для фронта.
+Модель может грузиться в .pkl файл для последующего использования без обучения при запуске и тд.
