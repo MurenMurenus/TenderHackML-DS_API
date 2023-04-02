@@ -71,9 +71,9 @@ async def get_whole_region_stats(my_id):
     lots = number_lot_names[number_lot_names['delivery_region']==top_reg[0]]
     lots = (lots[['lot_name', 'count']].sort_values(by='count', ascending=False)).head(5)
     # print the result
-    return {"most frequent category": most_frequent.to_json(),
-            "number_of_companies_on_category": number_of_companies[number_of_companies['delivery_region']==top_reg[0]].to_json(),
-            "lots_count_in region": lots.to_json()}
+    return {"most frequent category": most_frequent.head(3).to_json(force_ascii=False),
+            "number_of_companies_on_category": number_of_companies[number_of_companies['delivery_region']==top_reg[0]].to_json(force_ascii=False),
+            "lots_count_in region": lots.to_json(force_ascii=False)}
 
 
 async def get_top_region(from_, to, id_):
@@ -137,7 +137,7 @@ async def get_percent_won():
         result_df = pd.DataFrame(
             {'year_month': percent_won_by_year_month.index, 'winning_percentage': percent_won_by_year_month.values})
 
-        return result_df.to_json()
+        return result_df.to_json(force_ascii=False)
     else:
         print('No data about this user')
     # no data about this user
