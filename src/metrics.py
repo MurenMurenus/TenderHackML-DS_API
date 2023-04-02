@@ -1,15 +1,22 @@
 import json
-
+from datetime import datetime, timedelta
 import pandas as pd
 from flask import request, jsonify
 
 from src import database
+from src import controllers
 
 
 async def income(my_id, fr, to):
-    contracts_full_data = await database.get_exact_id_contracts(my_id)
-    id_income = contracts_full_data[contracts_full_data['contract_conclusion_date']]
-    return id_income
+    contracts_full_data = await controllers.get_by_timestamp(fr, to, my_id)
+    print(contracts_full_data)
+    out_now = 0
+    for i in contracts_full_data[0]:
+        out_now += i['price_y']
+    out_prev = 0
+    for i in contracts_full_data[1]:
+        out_prev += i['price_y']
+    return [out_now, out_prev]
 
 
 async def get_contract_category():
@@ -58,11 +65,11 @@ async def get_regional_stat():
     # no data about this user
 
 
-async def get_top_region():
-    contracts_full_data = await database.get_contracts_database()
-    reg_vals = [i['value'] for i in reg_stat]
-    top = [reg['name'] for reg in reg_stat if reg['value'] == max(reg_vals)][0]
-    return top
+async def get_top_region(from_, to, id_):
+    contracts_full_data = pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))[0])
+    vals = contracts_full_data.groupby('delivery_region')['price_y'].sum().reset_index()
+    print(vals)
+    return vals
 
 
 async def get_percent_won():

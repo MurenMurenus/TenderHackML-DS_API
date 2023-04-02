@@ -6,14 +6,39 @@ import traceback
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+import dateutil.relativedelta
 
 from src.models import pipeline
 from src import database
 from pymongo import MongoClient
 
 
-lr = joblib.load("./src/models/pkl/model.pkl")  # Load pkl of our model.
-print('Model loaded')
+# lr = joblib.load("./src/models/pkl/model.pkl")  # Load pkl of our model.
+# print('Model loaded')
+
+async def get_by_timestamp(from_: str, to: str, id_: str) -> list[[dict]]:
+    IP = '172.20.10.5'
+    client = MongoClient(f'mongodb://root:rootpassword@{IP}:27017')
+    db_raw = client['VendorDb']
+    data = db_raw['contracts'].find({"id": id_})  # request.get_json(force=True)['id']})
+
+    date_from = datetime.strptime(from_,"%Y-%m-%d")
+    date_to = datetime.strptime(to, "%Y-%m-%d")
+    prev = datetime.strptime(from_, "%Y-%m-%d") - pd.DateOffset(months=1)
+    out = [[], []]
+
+    for elem in data:
+        x = elem
+        if date_from <= datetime.strptime(x['contract_conclusion_date'], "%Y-%m-%d") <= date_to:
+            out[0].append(x)
+        elif prev <= datetime.strptime(x['contract_conclusion_date'], "%Y-%m-%d") <= date_from:
+            out[1].append(x)
+
+    for each in out[0]:
+        each['_id'] = 0
+    for each in out[1]:
+        each['_id'] = 0
+    return out
 
 
 async def get_exact():
@@ -65,6 +90,8 @@ async def get_exact_companies():
     except:
         return {'trace': traceback.format_exc()}
 
+
+'''
 async def get_predictions():
     if lr:
         try:
@@ -210,3 +237,4 @@ async def get_predictions():
     else:
         print('Train the model first')
         return {'trace': str('Train the model first')}
+'''

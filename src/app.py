@@ -15,6 +15,16 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 # API definition
 
 
+@app.route('/api/sth', methods=['POST'])
+async def sth():
+    IP = "192.168.1.50"
+    client = MongoClient(f'mongodb://root:rootpassword@{"localhost"}:27017')
+    db_raw = client['VendorDb']
+    data = db_raw['data'].find_one({"id": request.get_json(force=True)['id']})
+    data['_id'] = 0
+    return data
+
+
 @app.route('/api/get_exact_id', methods=['POST'])
 async def exact_id():
     return get_exact()
@@ -27,13 +37,24 @@ async def id_income():
     fr = json_['from']
     to = json_['to']
     o_income = await metrics.income(my_id, fr, to)
-    return {'Total income': o_income[my_id]}
+    return {'Total income now': o_income[0], 'Total income prev': o_income[1]}
+
+
+@app.route('/api/statistics', methods=['POST'])
+async def get_stat():
+    json_ = request.get_json(force=True)
+    my_id = json_['id']
+    fr = json_['from']
+    to = json_['to']
+    o_income = await metrics.income(my_id, fr, to)
+    regions = (await metrics.get_top_region(fr, to, my_id)).sort_values(by='price_y')
+    return {'Total income now': o_income[0], 'Total income prev': o_income[1], 'Regions': regions.to_json()}
 
 
 @app.route('/api/top_region', methods=['POST'])
 async def get_top_reg():
-    purchases = await metrics.get_top_region()
-    return {'Top region': purchases}
+    top = await metrics.get_top_region()
+    return {'Top region': top}
 
 
 @app.route('/api/get_exact_id_purchases', methods=['POST'])
