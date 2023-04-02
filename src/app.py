@@ -1,6 +1,7 @@
 import flask
 from flask import Flask, request
 from pymongo import MongoClient
+import json
 
 from src import controllers
 from src import metrics
@@ -58,8 +59,12 @@ async def get_stat_income():
     to = json_['to']
     o_income = await metrics.income(my_id, fr, to)
     regions = (await metrics.get_top_region(fr, to, my_id)).sort_values(by='price_y')
+    res = []
+    for k in regions['delivery_region'].keys():
+        res.append({regions['delivery_region'][k]: regions['price_y'][k]})
+    print(res)
 
-    return {'Total income now': o_income[0], 'Total income prev': o_income[1], 'Regions': regions.to_json()}
+    return {'Total income now': o_income[0], 'Total income prev': o_income[1], 'Regions': res}
 
 
 @app.route('/api/get_exact_id_purchases', methods=['POST'])
