@@ -1,7 +1,5 @@
-import json
-from datetime import datetime, timedelta
 import pandas as pd
-from flask import request, jsonify
+from flask import request
 
 from src import database
 from src import controllers
@@ -9,7 +7,7 @@ from src import controllers
 
 async def income(my_id, fr, to):
     contracts_full_data = await controllers.get_by_timestamp(fr, to, my_id)
-    print(contracts_full_data)
+
     out_now = 0
     for i in contracts_full_data[0]:
         out_now += i['price_y']
@@ -23,8 +21,7 @@ async def get_contract_category():
     my_id = request.get_json(force=True)['id']
 
     all_data = await database.get_exact_id_data(my_id)
-    purch = await database.get_exact_id_purchases(my_id)
-    part = await database.get_data_database()
+
     if all_data.shape[0] > 0:
         winned = all_data[all_data['is_winner'] == 'Да']
         len_winned = winned.shape[0]
@@ -32,6 +29,7 @@ async def get_contract_category():
         percent_ks = winned[winned['contract_category'] == 'КС'].shape[0] / len_winned
         # percent_need
         percent_need = winned[winned['contract_category'] == 'Потребность'].shape[0] / len_winned
+
         return [
                     {"name": "Категории контрактов", "КС": percent_ks, "Потребность": percent_need, "amt": 0}
                 ]
@@ -56,9 +54,7 @@ async def get_regional_stat():
             cur_reg = winned[winned['delivery_region'] == i].shape[0]
             percent_region[i] = (cur_reg / len_winned) * 100
             out.append({'name': i, 'value': percent_region[i]})
-        # percent_region
 
-        print(out)
         return out
     else:
         print('No data about this user')
@@ -74,7 +70,6 @@ async def get_whole_region_stats(my_id):
 
     lots = number_lot_names[number_lot_names['delivery_region']==top_reg[0]]
     lots = (lots[['lot_name', 'count']].sort_values(by='count', ascending=False)).head(5)
-    print(lots)
     # print the result
     return {"most frequent category": most_frequent.to_json(),
             "number_of_companies_on_category": number_of_companies[number_of_companies['delivery_region']==top_reg[0]].to_json(),
@@ -83,9 +78,8 @@ async def get_whole_region_stats(my_id):
 
 async def get_top_region(from_, to, id_):
     contracts_full_data = pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))[0])
-    print( pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))))
     vals = contracts_full_data.groupby('delivery_region')['price_y'].sum().reset_index()
-    print(vals)
+
     return vals
 
 
@@ -142,7 +136,7 @@ async def get_percent_won():
         # Create DataFrame with winning percentages for my_id
         result_df = pd.DataFrame(
             {'year_month': percent_won_by_year_month.index, 'winning_percentage': percent_won_by_year_month.values})
-        print(result_df.to_json())
+
         return result_df.to_json()
     else:
         print('No data about this user')
