@@ -65,8 +65,25 @@ async def get_regional_stat():
     # no data about this user
 
 
+async def get_whole_region_stats(my_id):
+    most_frequent = pd.read_csv('./src/data/most_frequent_lot_name_in_region.csv')
+    number_of_companies = pd.read_csv('./src/data/number_of_companies_all_regions.csv')
+    number_lot_names = pd.read_csv('./src/data/number_region_lot_name.csv')
+
+    top_reg = (await get_top_region("1970-01-01", "2100-01-01", my_id)).head(1)['delivery_region']
+
+    lots = number_lot_names[number_lot_names['delivery_region']==top_reg[0]]
+    lots = (lots[['lot_name', 'count']].sort_values(by='count', ascending=False)).head(5)
+    print(lots)
+    # print the result
+    return {"most frequent category": most_frequent.to_json(),
+            "number_of_companies_on_category": number_of_companies[number_of_companies['delivery_region']==top_reg[0]].to_json(),
+            "lots_count_in region": lots.to_json()}
+
+
 async def get_top_region(from_, to, id_):
     contracts_full_data = pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))[0])
+    print( pd.DataFrame((await controllers.get_by_timestamp(from_, to, id_))))
     vals = contracts_full_data.groupby('delivery_region')['price_y'].sum().reset_index()
     print(vals)
     return vals

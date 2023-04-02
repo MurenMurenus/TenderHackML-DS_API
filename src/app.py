@@ -40,8 +40,15 @@ async def id_income():
     return {'Total income now': o_income[0], 'Total income prev': o_income[1]}
 
 
+@app.route('/api/region_statistics', methods=['POST'])
+async def get_stat_region():
+    my_id = request.get_json(force=True)['id']
+    out = await metrics.get_whole_region_stats(my_id)
+    return out
+
+
 @app.route('/api/statistics', methods=['POST'])
-async def get_stat():
+async def get_stat_income():
     json_ = request.get_json(force=True)
     my_id = json_['id']
     fr = json_['from']
